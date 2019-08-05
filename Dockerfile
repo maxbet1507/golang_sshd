@@ -5,13 +5,12 @@ ARG SSH_USER_GROUP=user
 ARG SSH_USER_ID=1000
 ARG SSH_USER_GROUP_ID=1000
 
-RUN DEBIAN_FRONTEND=noninteractive \
-    apt-get update && \
-    apt-get install -y --no-install-recommends openssh-server sudo vim git git-flow bash-completion && \
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openssh-server sudo vim git git-flow bash-completion && \
     apt-get autoremove -y && \
     apt-get clean -y && \
-    \
     rm -rf /var/lib/apt/lists/* && \
+    \
     mkdir -p /var/run/sshd && \
     \
     sed 's/#PasswordAuthentication yes/PasswordAuthentication no/' -i /etc/ssh/sshd_config && \
@@ -26,16 +25,17 @@ RUN DEBIAN_FRONTEND=noninteractive \
     groupadd -g ${SSH_USER_GROUP_ID} ${SSH_USER_GROUP} && \
     useradd -u ${SSH_USER_ID} -g ${SSH_USER_GROUP_ID} -G sudo -s /bin/bash -m ${SSH_USER} && \
     \
-    sudo -u ${SSH_USER} /bin/bash -c 'mkdir '\$'{HOME}/.ssh' && \
-    sudo -u ${SSH_USER} /bin/bash -c 'chmod 700 '\$'{HOME}/.ssh' && \
-    sudo -u ${SSH_USER} /bin/bash -c 'touch '\$'{HOME}/.ssh/authorized_keys' && \
-    sudo -u ${SSH_USER} /bin/bash -c 'chmod 600 '\$'{HOME}/.ssh/authorized_keys' && \
-    sudo -u ${SSH_USER} /bin/bash -c 'mkdir '\$'{HOME}/.vscode-server'
+    { \
+    echo 'mkdir ~/.ssh && chmod 700 ~/.ssh'; \
+    echo 'touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys'; \
+    echo 'mkdir ~/.vscode-server'; \
+    } | sudo -u ${SSH_USER} /bin/bash
 
 ENV NOTVISIBLE "in users profile"
 ENV EDITOR=vim
 EXPOSE 22
-ENTRYPOINT ["/usr/sbin/sshd", "-D"]
+ENTRYPOINT ["sudo", "/usr/sbin/sshd", "-D"]
+USER ${SSH_USER}
 
 RUN go get -x -d github.com/stamblerre/gocode && \
     go build -o gocode-gomod github.com/stamblerre/gocode && \
@@ -66,6 +66,5 @@ RUN go get -x -d github.com/stamblerre/gocode && \
     github.com/mgechev/revive \
     github.com/derekparker/delve/cmd/dlv && \
     \
-    rm -rf ${GOPATH}/src/* ${GOPATH}/pkg/* && \
-    rm -rf /root/.cache && \
-    strip ${GOPATH}/bin/* 
+    strip ${GOPATH}/bin/* && rm -rf ${GOPATH}/src/* ${GOPATH}/pkg/* && \
+    rm -rf ~/.cache

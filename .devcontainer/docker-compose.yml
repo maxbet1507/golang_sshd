@@ -1,6 +1,6 @@
 version: "3.7"
 services:
-  golang:
+  example:
     build: .
     cap_add:
       - SYS_PTRACE
@@ -9,7 +9,7 @@ services:
     volumes:
     - "~/.ssh/id_rsa.pub:/home/user/.ssh/authorized_keys:ro"
     - "~/.gitconfig:/home/user/.gitconfig:ro"
-    - ".:/go/src/github.com/maxbet1507/golang_sshd:rw"
+    - "..:/go/src/github.com/maxbet1507/golang_sshd:rw"
     ports:
     - "10022:22"
   
